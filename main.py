@@ -8,6 +8,7 @@ TYPE_PARAM = 0.1
 
 import queue
 
+
 class Task:
     def __init__(self, task_type, deadline, arrival_time):
         self.arrival_time = arrival_time
@@ -38,7 +39,7 @@ class Core:
             self.current_task.process_time = self.current_exec_time
             self.current_task.core = self
 
-    def update(self): # check if its finishable
+    def update(self):  # check if its finishable
         if time == self.current_exec_time + self.current_start_time:
             self.current_task = None
             self.idle = True
@@ -69,13 +70,51 @@ class Scheduler:
     def __init__(self, mu, servers: list[Server]):
         self.servers: list[Server] = []
         self.rate = mu
+        self.idle = True
+        self.current_task: Task = None
+        self.next_free_time = -1
         self.queue1: list[Task] = []
         self.queue2: list[Task] = []
 
     def handle_queue(self):  # number of tasks to send in and send them TODO check deadlines
-        pass
+        if time == self.next_free_time:
+            if len(self.queue1) != 0:
+                current_task = self.queue1[0]
+                self.queue1 = self.queue1[1:]
+            elif len(self.queue2) != 0:
+                current_task = self.queue2[0]
+                self.queue2 = self.queue2[1:]
+            else:
+                return
+            service_time = utils.generate_exponential(1 / self.rate)
+            self.next_free_time = time + service_time
+            if time - current_task.arrival_time > current_task.deadline:
+                self.handle_queue()  # pass the passed deadline
+            elif time - current_task.arrival_time + service_time > current_task.deadline:
+                self.next_free_time = time + current_task.deadline
+                self.current_task = None
+            else:
+                self.current_task = current_task
+
+    def assign_task(self):
+        self.servers.sort(key=lambda x: len(x.queue))
+        min_length = len(self.servers[0].queue)
+        min_server_lenghts = []
+        for server in self.servers:
+            if len(server.queue) == min_length:
+                min_server_lenghts.append(server)
+            else:
+                break
+        rand_num = np.random.randint(0, len(min_server_lenghts))
+        self.servers[rand_num].queue.append(self.current_task)
 
     def update(self, tasks_to_insert: list[Task]):
+        if self.current_task is None:
+            pass
+        else:
+            if time == self.next_free_time:
+                self.assign_task()
+                self.current_task = None
         self.insert_new_tasks(tasks_to_insert)
         self.handle_queue()
 
