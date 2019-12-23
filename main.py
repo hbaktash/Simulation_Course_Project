@@ -10,7 +10,7 @@ import queue
 
 
 class Task:
-    def __init__(self, task_type, deadline, arrival_time):
+    def __init__(self, task_type, deadline, arrival_time): # TODO all stats
         self.arrival_time = arrival_time
         self.process_time = -1
         self.deadline = deadline
@@ -56,6 +56,7 @@ class Server:
         inserted_count = 0
         for task in self.queue:
             if time - task.arrival_time > task.deadline:
+                inserted_count += 1
                 continue
             for core in self.cores:
                 if core.idle:
@@ -86,7 +87,7 @@ class Scheduler:
                 self.queue2 = self.queue2[1:]
             else:
                 return
-            service_time = utils.generate_exponential(1 / self.rate)
+            service_time = round(utils.generate_exponential(1 / self.rate))
             self.next_free_time = time + service_time
             if time - current_task.arrival_time > current_task.deadline:
                 self.handle_queue()  # pass the passed deadline
@@ -115,8 +116,16 @@ class Scheduler:
             if time == self.next_free_time:
                 self.assign_task()
                 self.current_task = None
+
         self.insert_new_tasks(tasks_to_insert)
         self.handle_queue()
+
+        if self.current_task is None:
+            pass
+        else:
+            if time == self.next_free_time:
+                self.assign_task()
+                self.current_task = None
 
     def update_servers(self):
         for server in self.servers:
