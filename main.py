@@ -6,15 +6,16 @@ from typing import TypeVar, List
 import utils
 
 PATH = "C:\\Users\\hosse\\Desktop\\Simulation_Course_Project"
-TASK_COUNT = 300
+TASK_COUNT = 600000
 TYPE_PARAM = 0.1
 MAX_TASKS = 50000000
-IGNORED_TASKS = 20
-DELTA_T = 0.1
+IGNORED_TASKS = 1000
+DELTA_T = 0.2
 
 time = 0
 out_tasks = 0
 update_stats = False
+
 
 class Data:
     def __init__(self, name: str):
@@ -178,7 +179,7 @@ class Scheduler:
                 self.queue2 = self.queue2[1:]
             else:
                 return
-            service_time = (utils.generate_exponential(1 / self.rate))
+            service_time = (utils.generate_exponential(self.rate))
             # print("Service time:", service_time)
             self.next_free_time = time + service_time
             if time - current_task.arrival_time > current_task.deadline:
@@ -223,6 +224,7 @@ class Scheduler:
             else:
                 break
         rand_num = np.random.randint(0, len(min_server_lenghts))
+        # print("rand:", rand_num)
         self.servers[rand_num].queue.append(self.current_task)
 
     def update(self, tasks_to_insert: List[Task]):
@@ -261,6 +263,7 @@ class Scheduler:
 
     def all_accurate(self):
         global queue_time_stat_1, queue_time_stat_2, missed_deadlines_stat_1, missed_deadlines_stat_2, system_time_stat_1, system_time_stat_2
+        count = 7 + len(self.servers)
         if self.queue_length_stat.n < 2:
             return False
         if self.queue_length_stat.accuracy() > 0.05:
@@ -338,6 +341,7 @@ def start(scheduler: Scheduler, tasks: List[Task]):
         scheduler.update(tasks_to_insert)
         scheduler.update_servers()
         scheduler.update_cores()
+        print("outs: ", out_tasks)
         if out_tasks >= IGNORED_TASKS:
             update_stats = True
         time += DELTA_T
@@ -369,11 +373,13 @@ def main():
     print("missed deadlines 1:", missed_deadlines_stat_1.mean, " with accuracy ", missed_deadlines_stat_1.accuracy())
     print("missed deadlines 2:", missed_deadlines_stat_2.mean, " with accuracy ", missed_deadlines_stat_2.accuracy())
     print("---total missed deadlines:", (missed_deadlines_stat_1.sum() + missed_deadlines_stat_2.sum()) / (
-                missed_deadlines_stat_1.n + missed_deadlines_stat_2.n))
-    print("scheduler queue length:", scheduler.queue_length_stat.mean, " with accuracy ", scheduler.queue_length_stat.accuracy())
+            missed_deadlines_stat_1.n + missed_deadlines_stat_2.n))
+    print("scheduler queue length:", scheduler.queue_length_stat.mean, " with accuracy ",
+          scheduler.queue_length_stat.accuracy())
     # print("servers queue length:", [s.queue_length_stat for s in scheduler.servers])
     for s in scheduler.servers:
-        print("server ", s.id, " queue length:", s.queue_length_stat.mean," with accuracy ", s.queue_length_stat.accuracy())
+        print("server ", s.id, " queue length:", s.queue_length_stat.mean, " with accuracy ",
+              s.queue_length_stat.accuracy())
 
 
 if __name__ == '__main__':
